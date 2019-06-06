@@ -17,17 +17,14 @@ import android.view.LayoutInflater
 import kotlin.random.Random
 import android.util.DisplayMetrics
 import android.util.TypedValue
-
-
-
-
+import android.view.animation.AccelerateInterpolator
 
 
 class MainActivity : AppCompatActivity() {
 
     private var coinsParent : ConstraintLayout? = null
     private val commonTransition : Transition = initializeTransition(1000)
-    private val fastTransition: Transition = initializeTransition(250)
+    private val fastTransition: Transition = anotherTransition(250)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,8 +124,8 @@ class MainActivity : AppCompatActivity() {
         params.verticalBias = 0.6.toFloat()
         params.horizontalBias = 0.5.toFloat()
 
-        params.height = 200
-        params.width = 200
+        params.height = dpToPx(100f)
+        params.width = dpToPx(100f)
 
         item.layoutParams = params
     }
@@ -157,6 +154,13 @@ class MainActivity : AppCompatActivity() {
 
         val transition = ChangeBounds()
         transition.interpolator = AnticipateOvershootInterpolator(1.0f)
+        transition.duration = delay
+        return transition
+    }
+
+    private fun anotherTransition(delay: Long): Transition {
+        val transition = ChangeBounds()
+        transition.interpolator = AccelerateInterpolator(0.5f)
         transition.duration = delay
         return transition
     }

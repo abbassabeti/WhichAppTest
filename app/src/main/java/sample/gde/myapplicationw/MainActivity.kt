@@ -15,12 +15,19 @@ import android.os.Handler
 import android.view.View
 import android.view.LayoutInflater
 import kotlin.random.Random
+import android.util.DisplayMetrics
+import android.util.TypedValue
+
+
+
+
 
 
 class MainActivity : AppCompatActivity() {
 
     private var coinsParent : ConstraintLayout? = null
-    private val commonTransition : Transition = initializeTransition()
+    private val commonTransition : Transition = initializeTransition(1000)
+    private val fastTransition: Transition = initializeTransition(250)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,15 +43,42 @@ class MainActivity : AppCompatActivity() {
 
     private fun dropCoins(){
         fab_coin.isEnabled = false
+
         val rndCount = Random.nextInt(1,50)
+
         count_lbl.text = "$rndCount"
-        iterateFirstTransition(rndCount)
+
+        runInitialTransition(rndCount,rndCount)
+
     }
 
-    private fun iterateFirstTransition(count: Int){
+    private fun runInitialTransition(count: Int,initialCount: Int){
         if (count > 0) {
             val coin = createCoin()
             initializeConstrain(coin)
+            Handler().postDelayed({
+                this.runOnUiThread {
+                    val constraint2 = ConstraintSet()
+                    constraint2.clone(this, R.layout.initial_constraints)
+                    TransitionManager.beginDelayedTransition(coinsParent as ViewGroup, fastTransition)
+                    constraint2.applyTo(coinsParent)
+                    runInitialTransition(count - 1,initialCount)
+                }
+            }, 140)
+        }else {
+            Handler().postDelayed({
+                coinsParent?.removeViews(0,initialCount - 1)
+                iterateFirstTransition(initialCount,initialCount)
+            }, 1500)
+        }
+    }
+
+    private fun iterateFirstTransition(count: Int,initialCount: Int){
+        if (count > 0) {
+            if (count < initialCount) {
+                val coin = createCoin()
+                initializeSecondConstrain(coin)
+            }
 
             Handler().postDelayed( {
                 this.runOnUiThread {
@@ -52,7 +86,7 @@ class MainActivity : AppCompatActivity() {
                     constraint2.clone(this, R.layout.second_constraints)
                     TransitionManager.beginDelayedTransition(coinsParent as ViewGroup,commonTransition)
                     constraint2.applyTo(coinsParent)
-                    iterateFirstTransition(count - 1)
+                    iterateFirstTransition(count - 1,initialCount)
                 }
             }, 200 )
         }else
@@ -90,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         params.leftToLeft = R.id.coins_parent
         params.rightToRight = R.id.coins_parent
 
-        params.verticalBias = 0.5.toFloat()
+        params.verticalBias = 0.6.toFloat()
         params.horizontalBias = 0.5.toFloat()
 
         params.height = 200
@@ -99,12 +133,37 @@ class MainActivity : AppCompatActivity() {
         item.layoutParams = params
     }
 
-    private fun initializeTransition(): Transition {
+    private fun initializeSecondConstrain(item: View){
+        var params = LayoutParams(
+            LayoutParams.WRAP_CONTENT,
+            LayoutParams.WRAP_CONTENT
+        )
+
+        params.topToTop = R.id.coins_parent
+        params.bottomToBottom = R.id.coins_parent
+        params.leftToLeft = R.id.coins_parent
+        params.rightToRight = R.id.coins_parent
+
+        params.verticalBias = 0.4.toFloat()
+        params.horizontalBias = 0.5.toFloat()
+
+        params.height = dpToPx(50f)
+        params.width = dpToPx(50f)
+
+        item.layoutParams = params
+    }
+
+    private fun initializeTransition(delay: Long): Transition {
 
         val transition = ChangeBounds()
         transition.interpolator = AnticipateOvershootInterpolator(1.0f)
-        transition.duration = 1200
+        transition.duration = delay
         return transition
+    }
+
+    private fun dpToPx(dp: Float): Int {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, this.resources.displayMetrics)
+            .toInt()
     }
 
 }
